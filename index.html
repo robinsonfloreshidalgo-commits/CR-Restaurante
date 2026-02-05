@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>La Buena Mesa</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- 🍽️ FUENTE GOURMET -->
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#f4f4f4;
+  --card:rgba(255,255,255,.9);
+  --text:#222;
+  --main:#b23a2f;
+}
+.dark{
+  --bg:#0f0f0f;
+  --card:rgba(30,30,30,.9);
+  --text:#eee;
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI,sans-serif;}
+body{background:var(--bg);color:var(--text);transition:.4s;}
+
+header{
+  height:60vh;
+  background:url("https://images.unsplash.com/photo-1600891964599-f61ba0e24092") center/cover;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+}
+header::after{
+  content:"";position:absolute;inset:0;background:rgba(0,0,0,.55);
+}
+header div{
+  position:relative;color:rgb(255, 255, 255);text-align:center;
+}
+
+/* 🍽️ TÍTULO GOURMET */
+header h1{
+  font-family:'Playfair Display', serif;
+  font-size:4.5rem;
+}
+header p{
+  font-family:'Playfair Display', serif;
+  font-size:clamp(1.4rem,3vw,2.5rem);
+  letter-spacing:2px;
+  opacity:.9;
+}
+
+/* ✨ ANIMACIÓN SCROLL TEXTO */
+.reveal{
+  opacity:0;
+  transform:translateY(30px);
+  transition:1s ease;
+}
+.reveal.active{
+  opacity:1;
+  transform:translateY(0);
+}
+
+/* ✨ ANIMACIÓN CARDS */
+.card{
+  background:var(--card);
+  border-radius:18px;
+  overflow:hidden;
+  box-shadow:0 10px 25px rgba(0,0,0,.2);
+  transition:.4s;
+  opacity:0;
+  transform:translateY(40px);
+}
+.card.show{
+  opacity:1;
+  transform:translateY(0);
+}
+.card:hover{transform:translateY(-10px) scale(1.03);}
+.card img{
+  width:100%;height:160px;object-fit:cover;
+  transition:.4s;
+}
+.card:hover img{transform:scale(1.1);}
+.card h3,.card p{padding:10px;}
+.card button{
+  margin:10px;width:calc(100% - 20px);
+  padding:10px;border:none;border-radius:12px;
+  background:var(--main);color:white;cursor:pointer;
+}
+
+nav{
+  position:sticky;top:0;z-index:10;
+  background:var(--card);backdrop-filter:blur(10px);
+  display:flex;gap:10px;justify-content:center;
+  padding:10px;
+}
+nav button{
+  background:var(--main);color:white;border:none;
+  padding:10px 18px;border-radius:25px;
+  cursor:pointer;transition:.3s;
+}
+nav button:hover{transform:scale(1.1)}
+
+section{
+  display:none;padding:30px;
+  grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  gap:25px;
+}
+section.active{display:grid;}
+
+/* 🛒 CARRITO */
+#cart{
+  position:fixed;bottom:20px;right:20px;
+  background:var(--main);color:white;
+  padding:15px 20px;border-radius:50px;
+  cursor:pointer;animation:bounce 2s infinite;
+}
+@keyframes bounce{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-6px)}
+}
+
+#cartBox{
+  position:fixed;bottom:90px;right:20px;
+  background:var(--card);width:300px;
+  max-height:340px;overflow:auto;
+  padding:15px;border-radius:18px;
+  display:none;box-shadow:0 10px 30px rgba(0,0,0,.4);
+}
+#cartBox .clear{
+  width:100%;padding:8px;margin-bottom:10px;
+  border:none;border-radius:10px;
+  background:var(--main);color:white;cursor:pointer;
+}
+.cart-item{
+  display:flex;justify-content:space-between;
+  align-items:center;margin-bottom:6px;
+}
+.cart-item button{
+  background:#444;color:white;border:none;
+  border-radius:50%;width:22px;height:22px;
+  cursor:pointer;
+}
+
+#toggle{
+  position:fixed;bottom:20px;left:20px;
+  padding:12px;border:none;border-radius:50%;
+  cursor:pointer;font-size:18px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="reveal">
+    <h1>La Buena Mesa</h1>
+    <p>Tradición costarricense en cada plato 🇨🇷</p>
+  </div>
+</header>
+
+<nav>
+  <button onclick="show('entradas')">Entradas</button>
+  <button onclick="show('platos')">Platos</button>
+  <button onclick="show('postres')">Postres</button>
+  <button onclick="show('bebidas')">Bebidas</button>
+</nav>
+
+<section id="entradas" class="active"></section>
+<section id="platos"></section>
+<section id="postres"></section>
+<section id="bebidas"></section>
+
+<div id="cart">🛒 ₡<span id="total">0</span></div>
+
+<div id="cartBox">
+  <button class="clear" onclick="clearCart()">🗑️ Vaciar carrito</button>
+  <div id="cartItems"></div>
+</div>
+
+<button id="toggle" onclick="dark()">🌙</button>
+
+<script>
+let total=0, cart=[];
+const menu={
+  entradas:[
+ ["Patacones","2800","https://walac.pe/wp-content/uploads/2023/06/Patacones-1068x711.jpg"],
+ ["Chifrijo","3500","https://i.pinimg.com/originals/10/22/94/102294bc0b94dd8a01e158fd0ed1b8b7.jpg"],
+ ["Empanada de queso","2000","https://tse1.explicit.bing.net/th/id/OIP.zvYr_tDvKKN54-jRPbd3aAHaFj?rs=1&pid=ImgDetMain&o=7&rm=3"],
+ ["Empanada de frijol","2000","https://i.pinimg.com/originals/d1/0f/c3/d10fc3a45599315150972162e7c18a32.jpg"],
+ ["Yuca frita","2500","https://tse3.mm.bing.net/th/id/OIP.pfWHFt_jYdBb6uia5gP47AHaE8?rs=1&pid=ImgDetMain&o=7&rm=3"],
+ ["Tortilla palmeada","2200","https://tse1.explicit.bing.net/th/id/OIP.p4B12UtyPfHRe5LHyzyLEAHaLG?rs=1&pid=ImgDetMain&o=7&rm=3"],
+ ["Chicharrones","3800","https://static01.nyt.com/images/2024/05/23/multimedia/fs-chicharrones-gzct/fs-chicharrones-gzct-jumbo.jpg"],
+ ["Arreglado pequeño","2600","https://tse2.mm.bing.net/th/id/OIP.W6u4siLLTwh8GNa8FqmHpAHaFj?rs=1&pid=ImgDetMain&o=7&rm=3"],
+ ["Picadillo de papa","2300","https://www.centralamerica.com/wp-content/uploads/2018/08/picadillo-de-papa-featured-e1565457972627.jpg"],
+ ["Picadillo de arracache","2300","https://zukra.cr/wp-content/uploads/2023/03/Fotos-Web-4.png"],
+ ["Tamal asado","2400","https://2.bp.blogspot.com/-L02SgDTTPm8/U1NFVsHPCXI/AAAAAAAAKz8/YhH-MM3DEJs/s1600/masa+fan+004+copy.jpg"],
+ ["Tamales","3000","https://oem.com.mx/elsoldeacapulco/img/17159654/1549030122/BASE_LANDSCAPE/1200/Tamales.jpg"],
+ ["Ceviche tico","4200","https://tse4.mm.bing.net/th/id/OIP.PGhMS-6Q8-ki4Dhu4DE8HAHaHa?rs=1&pid=ImgDetMain&o=7&rm=3"],
+ ["Ceviche banano","4200","https://www.chilenacocina.com/wp-content/uploads/2017/12/MG_1271.jpg"],
+ ["Sopa negra","3200","https://cdn.tasteatlas.com/images/dishes/2729923d0fde4dbe915adba627057054.jpg?mw=1300"],
+ ["Sopa de mondongo","3500","https://images.aws.nestle.recipes/original/ecbd41cfa335aaf5f2fd95cca26d04ce_mondongo.jpeg"],
+ ["Aguacate relleno","2800","https://th.bing.com/th/id/R.1e9bd997e9fb1741fc3ee502b3e2106c?rik=VmzgHozsvt2MiA&pid=ImgRaw&r=0"],
+ ["Ensalada rusa","2600","https://cocina.guru/wp-content/uploads/2020/05/ensaladilla-rusa-1.jpg"],
+ ["Ensalada de repollo","2200","https://recetas.encolombia.com/wp-content/uploads/2012/11/Ensalada-Repollo.png"],
+ ["Pan casero","1500","https://tse4.mm.bing.net/th/id/OIP.lxJ5RRvOD5jHA-BvCkkEVgHaE7?rs=1&pid=ImgDetMain&o=7&rm=3"]
+  ],
+  platos:[
+ ["Casado con pollo","4800","https://tse2.mm.bing.net/th/id/OIP.zz0pzjouGmuWebIyNTfh2QHaFj?cb=defcachec2&w=1024&h=768&rs=1&pid=ImgDetMain&o=7&rm=3"],
+ ["Casado con carne","5200","https://tse4.mm.bing.net/th/id/OIP.8_PXQGiodbSKo3p6Z0ftNAHaFZ?cb=defcachec2&rs=1&pid=ImgDetMain&o=7&rm=3"],
+ ["Casado con pescado","5500","https://s3.amazonaws.com/aphs.worldnomads.com/lenuka/26826/IMG_6993_640x480.jpg"],
+ ["Olla de carne","5800","https://blog.amigofoods.com/wp-content/uploads/2023/03/olla-de-carne-beef-stew.jpg"],
+ ["Arroz con pollo","4500","https://tse1.mm.bing.net/th/id/OIP.J4FIb-3u2e5pPwoB6GikwQHaE5?rs=1&pid=ImgDetMain&o=7&rm=3"],
+ ["Arroz con camarones","6000","https://okdiario.com/img/2024/07/03/receta-de-arroz-con-camarones-colombiano.jpg"],
+ ["Arroz guacho","4800","https://www.numar.net/wp-content/uploads/2021/12/arroz-guacho.jpg"],
+ ["Chifrijo grande","5500","https://www.tresjotas.com/wp-content/uploads/2023/09/chifrijo-tradicional-costarricense.jpg"],
+ ["Pollo achotado","5200","https://igrc.cr/wp-content/uploads/pollo-achiotado_nvid.webp"],
+ ["Carne en salsa","5600","https://tse2.mm.bing.net/th/id/OIP.rmfcAJQ_4U88fzHq-VueGQHaEK?rs=1&pid=ImgDetMain&o=7&rm=3"],
+ ["Pescado entero","6500","https://img.freepik.com/fotos-premium/detalle-pescado-entero-plato-metal-especias-cilantro-jugo-limon-pescado-tiene-piel-carbonizada-xa_28914-32117.jpg?w=1060"],
+ ["Tilapia a la plancha","6200","https://tse4.mm.bing.net/th/id/OIP.cS-OyiFL1F0kn9wz9h_uOgHaF7?rs=1&pid=ImgDetMain&o=7&rm=3"],
+ ["Pollo caribeño","5800","https://recetilandia.com/wp-content/uploads/pollo-caribeno.jpg"],
+ ["Rice and beans","4800","https://www.aspicyperspective.com/wp-content/uploads/2019/12/easy-red-beans-and-rice-recipe-15.jpg"],
+ ["Tacos ticos","4600","https://www.nacion.com/resizer/WWI-5q1Er0jWl7KkgdUAifz43gY=/600x0/center/middle/filters:quality(100)/arc-anglerfish-arc2-prod-gruponacion.s3.amazonaws.com/public/H5ON26QJNVDPNI7KZLOBRBUV6E.jpg"],
+ ["Hamburguesa criolla","5200","https://tse1.mm.bing.net/th/id/OIP.3Xwd7o4yOPsFP7-tQADHsgHaE7?rs=1&pid=ImgDetMain&o=7&rm=3"],
+ ["Pinto con carne","4200","https://i.pinimg.com/originals/90/5e/9a/905e9a72282fa223d719b4596e38806f.jpg"],
+ ["Pinto con huevo","3800","https://tse1.mm.bing.net/th/id/OIP.EuU2Z35JhCcsdKCnM428vgHaE8?rs=1&pid=ImgDetMain&o=7&rm=3"],
+  ],
+  postres:[
+ ["Tres leches","2800","https://www.lemonblossoms.com/wp-content/uploads/2023/03/Tres-Leches-Cake-S2.jpg"],
+ ["Queque seco","2200","https://i.pinimg.com/originals/72/b8/02/72b802f78ac9a2d5ad8a45461e52799d.jpg"],
+ ["Arroz con leche","2400","https://buenavibra.es/wp-content/uploads/2016/12/arroz-con-leche-p_opt.jpg"],
+ ["Cajeta","2000","https://tse1.explicit.bing.net/th/id/OIP.Kj0lw2iOtqOxpswTvnUTlAHaEK?cb=defcachec2&rs=1&pid=ImgDetMain&o=7&rm=3"],
+ ["Churchill","3000","https://i.pinimg.com/736x/dc/2e/f6/dc2ef6d04f312ce5ffefc2df3e194645.jpg"],
+ ["Copos","2000","https://costaricatravelblog.com/wp-content/uploads/2019/08/costaricancopo.jpg"],
+ ["Tamal dulce","2200","https://th.bing.com/th/id/R.52ba875ab3ecc20889d04f5ad3e56dcf?rik=MS3w5Xm%2bFes%2bAw&pid=ImgRaw&r=0"],
+ ["Bizcocho","2300","https://cdn.recetasderechupete.com/wp-content/uploads/2020/06/bizcocho-denso.jpg"],
+ ["Rosquillas","2100","https://tse1.explicit.bing.net/th/id/OIP.ykmmx-cL4mMPv-h5sYpY6QHaE4?cb=defcachec2&rs=1&pid=ImgDetMain&o=7&rm=3"],
+ ["Empanada dulce","2000","https://media.diariouno.com.ar/p/7eff638896aacf056120e132bee70ae3/adjuntos/298/imagenes/009/530/0009530464/1200x0/smart/receta-empanadas-dulce-leche-3jpg.jpg"],
+ ["Flan","2600","https://tse1.mm.bing.net/th/id/OIP.YpARH2m__d4C9efs8YT3TQHaE8?cb=defcachec2&rs=1&pid=ImgDetMain&o=7&rm=3"],
+ ["Natilla con tapa","1800","https://assets.dev-filo.dift.io/img/2017/04/09/natilla_938_re.jpg"],
+ ["Pan dulce","1800","https://storage.googleapis.com/gx-global-cms/mkt/bea60ef3-fc5f-401e-af93-728b811c2c5e.jpg"],
+ ["Cocada","2000","https://tse2.mm.bing.net/th/id/OIP.DBL4O4xZMKiVPlQAdp2KtQHaFj?cb=defcachec2&rs=1&pid=ImgDetMain&o=7&rm=3"],
+ ["Bocadillo con queso","2200","https://boquisabroso.com.co/wp-content/uploads/2023/11/Receta-de-Bocadillo-con-Queso.jpg"],
+ ["Helado artesanal","2500","https://www.daddy-cool.gr/wp-content/uploads/2024/06/25/pagoto-fraoula-me-kefir_1719321294-768x576.jpg"],
+ ["Gelatina","1500","https://th.bing.com/th/id/R.7922d24a3323930e802c32fdcc8ff5a8?rik=W5R%2fbJh%2fbvgdoQ&pid=ImgRaw&r=0"],
+ ["Frutas frescas","1800","https://okdiario.com/img/2023/02/12/photo-2023-02-11-09-56-32-655x368.jpg"],
+ ["Banano frito","2000","https://tse4.mm.bing.net/th/id/OIP.UldAyvvZtDIJnfvU8I45TQHaFj?cb=defcachec2&rs=1&pid=ImgDetMain&o=7&rm=3"],
+ ["Plátano en miel","2200","https://tse3.mm.bing.net/th/id/OIP.r_uVkpzaXAHpFDoSa__PEwHaHa?cb=defcachec2&rs=1&pid=ImgDetMain&o=7&rm=3"]
+  ],
+  bebidas:[
+ ["Café chorreado","1200","https://makeshop-multi-images.akamaized.net/tentoten/itemimages/000000000221_wJ7wsKc.jpg"],
+ ["Agua dulce","1000","https://boondockingrecipes.com/wp-content/uploads/2025/01/23.-Costa-Rican-Agua-Dulce-Recipe-2-768x508.jpg"],
+ ["Chocolate caliente","1500","https://fast-gas.com/wp-content/uploads/2025/04/Whipped-Hot-Chocolate-Recipe.jpg"],
+ ["Refresco natural","1200","https://www.acquajet.com/wp-content/uploads/2022/03/pb-zumos-nat.jpg"],
+ ["Horchata","1200","https://www.cookingclassy.com/wp-content/uploads/2019/04/horchata-6.jpg"],
+ ["Fresco de tamarindo","1200","https://www.creatable.de/wp-content/uploads/2024/12/Fresco_de_Tamarindo__Tamarindensaft-1024x576.jpg"],
+ ["Fresco de cas","1200","https://www.jardineriaon.com/wp-content/uploads/2024/03/refresco-de-cas-840x550.jpg"],
+ ["Fresco de maracuyá","1200","https://comidaperuana.online/wp-content/uploads/2022/09/receta-de-refresco-de-maracuya.jpg"],
+ ["Jugo de naranja","1500","https://recetatipica.com/wp-content/uploads/2019/03/jugo-de-naranja.jpg"],
+ ["Jugo de piña","1500","https://casualfoodist.com/wp-content/uploads/2022/08/Pineapple-Agua-Fresca-3.jpg"],
+ ["Batido de guanábana","1800","https://th.bing.com/th/id/R.2e1a857e3d45da1afa8d2d1b59eac97d?rik=mwwGUfLc%2bFAENg&pid=ImgRaw&r=0"],
+ ["Batido de mora","1800","https://th.bing.com/th/id/R.9c22955ed4f96ba89765ca6f164671e2?rik=nZHQUW8NlC5mBw&pid=ImgRaw&r=0"],
+ ["Leche fría","1000","https://www.mexicoenmicocina.com/wp-content/uploads/2018/07/Lechita-fria-receta-Mexico-en-mi-cocina-2-1.jpg"],
+ ["Té caliente","1200","https://img.freepik.com/foto-gratis/te-caliente-taza-sobre-fondo-antiguo_200402-8788.jpg?size=626&ext=jpg"],
+ ["Gaseosa","1500","https://www.mashed.com/img/gallery/this-viral-tiktok-shows-mcdonalds-employees-pouring-coca-cola/l-intro-1641338313.jpg"],
+ ["Cerveza nacional","2200","https://i.pinimg.com/originals/9b/3a/fe/9b3afe189c2dc9f9d35e35c428b15877.jpg"],
+ ["Pipa fría","2000","https://www.saudedr.com.br/wp-content/uploads/2018/04/agua-de-coco-beneficio-608x402.jpg"],
+ ["Agua mineral","1200","https://www.womansworld.com/wp-content/uploads/2021/03/Sparkling-water.jpg?w=1024&quality=86&strip=all"],
+ ["Café frío","1600","https://eldiariony.com/wp-content/uploads/sites/2/2021/04/Cafe-Royston-D-souza-en-Pexels.jpg?quality=80&strip=all&w=1200"],
+ ["Batido de papaya","1700","https://tse1.mm.bing.net/th/id/OIP.E-PYWz0xfPAzOG7hkudxBQHaE-?rs=1&pid=ImgDetMain&o=7&rm=3"]
+  ]
+};
+
+for(let cat in menu){
+  const sec=document.getElementById(cat);
+  menu[cat].forEach(i=>{
+    sec.innerHTML+=`
+    <div class="card">
+      <img src="${i[2]}">
+      <h3>${i[0]}</h3>
+      <p>₡${i[1]}</p>
+      <button onclick="add('${i[0]}',${i[1]})">Agregar</button>
+    </div>`;
+  });
+}
+
+function show(id){
+  document.querySelectorAll("section").forEach(s=>s.classList.remove("active"));
+  const sec=document.getElementById(id);
+  sec.classList.add("active");
+
+  setTimeout(()=>{
+    sec.querySelectorAll(".card").forEach((c,i)=>{
+      setTimeout(()=>c.classList.add("show"), i*100);
+    });
+  },100);
+}
+
+function add(n,p){cart.push({n,p});total+=p;renderCart();}
+function removeItem(i){total-=cart[i].p;cart.splice(i,1);renderCart();}
+function renderCart(){
+  document.getElementById("total").innerText=total;
+  document.getElementById("cartItems").innerHTML=
+  cart.map((i,x)=>`
+  <div class="cart-item">
+    <span>${i.n} ₡${i.p}</span>
+    <button onclick="removeItem(${x})">❌</button>
+  </div>`).join("")+`<hr><b>Total: ₡${total}</b>`;
+}
+function clearCart(){cart=[];total=0;renderCart();}
+document.getElementById("cart").onclick=()=>{
+  const b=document.getElementById("cartBox");
+  b.style.display=b.style.display==="block"?"none":"block";
+};
+function dark(){document.body.classList.toggle("dark");}
+
+/* ✨ ANIMACIÓN TEXTO */
+const reveals=document.querySelectorAll(".reveal");
+function revealScroll(){
+  reveals.forEach(r=>{
+    if(r.getBoundingClientRect().top < window.innerHeight-100){
+      r.classList.add("active");
+    }
+  });
+}
+window.addEventListener("scroll",revealScroll);
+revealScroll();
+
+/* ✨ ACTIVAR ANIMACIÓN INICIAL */
+show("entradas");
+</script>
+
+</body>
+</html>
